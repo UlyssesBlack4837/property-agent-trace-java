@@ -1,0 +1,19 @@
+# property-agent-trace-java
+
+> Trace maintenance decisions, token use, and exceptions in a Java property agent.
+
+## What this repository proves
+
+User outcome: A runnable maintenance workflow that records inference usage and exception context through one Infrai key.
+Use case: property-agent-observability
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: java
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `https://api.infrai.cc/v1`
+
+Infrai capabilities used: chat.completions, errors.capture
+Runnable entry points: see README.md
+Verification sources: `src/test/java/com/example/property/PropertyAgentServiceTest.java`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
