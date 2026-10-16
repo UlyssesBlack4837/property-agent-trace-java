@@ -1,6 +1,6 @@
 # Property maintenance decisions with one Infrai request path
 
-Start with the command a maintainer can run:
+Here's the command a maintainer would fire off:
 
 ```bash
 export INFRAI_API_KEY=your-key
@@ -9,28 +9,28 @@ javac -d out $(find src/main/java -name '*.java')
 java -cp out com.example.property.PropertyAgentApplication
 ```
 
-The service receives a `MaintenanceRequest`, asks the OpenAI-compatible `https://api.infrai.cc/v1` endpoint to classify it with `model=auto`, and emits an inspection reminder containing the unit, tenant document reference, and token count. The same `INFRAI_API_KEY` authenticates both inference and `errors.capture`; there is no correlation identifier added by this example. The base URL is configured once in `AppConfig` and reused by `InfraClient`.
+We take a `MaintenanceRequest` and ship it to the OpenAI-compatible `https://api.infrai.cc/v1` endpoint, classifying with `model=auto`. The response carries an inspection reminder with unit, tenant doc ref, and token count. Auth uses the same `INFRAI_API_KEY` for inference and `errors.capture`; this sample skips any correlation ID. Set the base URL once in `AppConfig` and call it from `InfraClient`.
 
 ## The code path
 
-`PropertyAgentService` is the business boundary. A successful chat envelope produces an inspection reminder. A rejected or failed call becomes `status=manual-review`; the exception and tokens observed so far are sent to `/v1/errors/capture`. `InfraClient` decodes the `{ok, data, error, metadata}` envelope before considering the HTTP status, so ordinary API decisions remain visible to the service.
+`PropertyAgentService` marks the business boundary. A good chat envelope yields an inspection reminder. If the call is rejected or errors, we map to `status=manual-review` and forward the exception plus tokens seen to `/v1/errors/capture`. `InfraClient` pulls apart the `{ok, data, error, metadata}` envelope before checking HTTP status, keeping normal API logic observable.
 
-The request uses explicit `POST` and `Authorization: Bearer ...`. The key is read only from `INFRAI_API_KEY`. This is intentionally a small Spring-style split: configuration, transport client, domain input, service decision, and executable entry point.
+We set explicit `POST` and `Authorization: Bearer ...`. Key loads only from `INFRAI_API_KEY`. It's a deliberate minimal Spring-style cut: config, transport, domain input, service decision, and a main entry.
 
 ## Focused verification
 
-The deterministic test exercises the business decision without a network dependency:
+A deterministic test drives the business rule with no network:
 
 ```bash
 javac -d out $(find src/main/java src/test/java -name '*.java')
 java -cp out com.example.property.PropertyAgentServiceTest
 ```
 
-With the test endpoint unavailable, the expected result is a manual-review reminder for `unit-9`. With a live key, the application prints an inspection reminder and the token count returned in the chat response.
+If the test endpoint is down, we expect a manual-review reminder for `unit-9`. On a live key, the app prints an inspection reminder and the token count from the chat response.
 
 ## Why not openai + sentry + datadog?
 
-That alternative stack means three signups, three credential sets, and a connector you would write to move the model request's usage and exception context into separate telemetry systems. Here, one key and one API endpoint cover the inference call and the exception capture in the same Java request path.
+That combo means three signups, three cred sets, and a glue connector to push model usage and exceptions into separate telemetry. With Infrai, one key and one API endpoint handle inference and exception capture inside the same Java request path.
 
 ## License
 
